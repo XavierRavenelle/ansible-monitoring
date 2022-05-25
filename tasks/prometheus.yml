@@ -1,0 +1,21 @@
+---
+- name: Create prometheus folder
+  file:
+    path: "{{ PATH }}/grafana"
+    mode: '0755'
+    state: directory
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+
+- name: Generate conf
+  template:
+    src: prometheus/{{ ITEM }}.j2
+    dest: "{{ PATH }}/prometheus/{{ ITEM }}"
+    owner: {{ USER.USERNAME }}
+    group: {{ USER.USERNAME }}
+    mode: '0744'
+  become: true
+  with_items: 
+    - alert.rules
+    - prometheus.yml
