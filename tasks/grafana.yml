@@ -1,0 +1,48 @@
+---
+- name: Create grafana folder
+  file: 
+    path: "{{ PATH }}/grafana"
+    mode: '0755'
+    state: directory
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+
+- name: Create datasource folder
+  file:
+    path: "{{ PATH }}/grafana/provisioning/datasources/"
+    mode: '0755'
+    state: directory
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+
+- name: Generate config
+  template:
+    src: "{{ item }}.j2"
+    dest: "{{ PATH }}/grafana/{{ item }}"
+    mode: '0744'
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  with_items:
+    - grafana.ini
+  become: true
+
+- name: Generate LDAP
+  template:
+    src: "ldap.toml.j2"
+    dest: "{{ PATH }}/grafana/ldap.toml"
+    mode: '0744'
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+  when: LDAP.ENABLE == true
+
+- name: Generate datasource
+  template:
+    src: datasources.yml.j2
+    dest: "{{ PATH }}/grafana/provisioning/datasources/ansible.yml"
+    mode: '0744'
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
