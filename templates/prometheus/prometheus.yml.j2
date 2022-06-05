@@ -69,7 +69,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: {{ groups['exporters'] | first }}:{{ snmp_exporter_port }}
+        replacement: snmp_exporter:{{ snmp_exporter_port }}
 
   - job_name: 'blackbox-ping'
     scrape_interval: 2s
@@ -88,7 +88,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: {{ groups['exporters'] | first }}:{{ blackbox_exporter_port }}
+        replacement: blackbox_exporter:{{ blackbox_exporter_port }}
 
   - job_name: 'blackbox-ssh'
     scrape_interval: 5m
@@ -107,7 +107,7 @@ scrape_configs:
       - source_labels: [__param_target]
         target_label: instance
       - target_label: __address__
-        replacement: {{ groups['exporters'] | first }}:{{ blackbox_exporter_port }}
+        replacement: blackbox_exporter:{{ blackbox_exporter_port }}
 
   - job_name: 'ping-exporter'
     scrape_interval: 60s
@@ -131,10 +131,10 @@ scrape_configs:
       - source_labels: []
         regex: .*
         target_label: __address__
-        replacement: {{ groups['exporters'] | first }}:{{ ping_exporter_port }}
+        replacement: ping_exporter:{{ ping_exporter_port }}
 
 alerting:
   alertmanagers:
   - static_configs:
     - targets:
-      - {{ groups['prometheus'] | first }}:{{ alertmanager_port }}
+      - {{ ansible_host }}:{{ alertmanager_port }}
