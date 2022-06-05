@@ -1,0 +1,22 @@
+---
+- name: Create config folder
+  file:
+    path: "{{ PATH }}/loki"
+    owner: {{ USER.USERNAME }}
+    group: {{ USER.USERNAME }}
+    state: directory
+    mode: '0755'
+  become: true
+
+- name: Generate conf
+  template:
+    src: loki/{{ ITEM }}.j2
+    dest: "{{ PATH }}/loki/{{ ITEM }}"
+    owner: {{ USER.USERNAME }}
+    group: {{ USER.USERNAME }}
+    mode: '0744'
+  become: true
+  with_items: 
+    - loki.conf
+    - promtail.conf
+    - syslog-ng.conf

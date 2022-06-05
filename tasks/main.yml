@@ -1,0 +1,6 @@
+---
+- name: Include tasks
+  tasks:
+    - include: "setup.yml"
+    - include: "grafana.yml"
+    - include: "loki.yml"
