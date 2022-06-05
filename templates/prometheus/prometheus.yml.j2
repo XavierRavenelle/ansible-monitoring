@@ -119,7 +119,7 @@ scrape_configs:
         - google.ca
         - 1.1.1.1
         - 8.8.8.8
-        - dcroot1.lanets.ca
+        - {{ root_server}}
     relabel_configs:
       - source_labels: [__address__]
         target_label: __param_target

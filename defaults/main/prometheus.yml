@@ -1,4 +1,6 @@
 ---
+root_server: ''
+
 prometheus_version: 2.22.0
 prometheus_binary_local_dir: ''
 prometheus_skip_install: false
