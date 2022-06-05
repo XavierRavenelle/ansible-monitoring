@@ -1,0 +1,283 @@
+{{ ansible_managed | comment }}
+
+groups:
+- name: Rules.conf
+  rules:
+  - alert: InstanceDown
+    expr: probe_success{job="blackbox-ping"} == 0
+    for: 30s
+    labels:
+      severity: high
+    annotations:
+      summary: "Instance {{ $labels.instance }} down"
+
+  - alert: HighCPU
+    expr: cpmCPUAvgLast5Sec > 75
+    for: 30s
+    labels:
+      severity: medium
+    annotations:
+      summary: "High usage on Cisco instance {{ $labels.instance }}"
+
+  - alert: HighCPUTemp
+    expr: cpuTemp > 75
+    for: 1m
+    labels:
+      severity: medium
+    annotations:
+      summary: "High temperature on instance {{ $labels.instance }}"
+
+  - alert: PortSecurity
+    expr: (snmp_ifOperStatus{ifDescr!="Vlan1|FastEthernet0"} == 3 and snmp_ifAdminStatus{ifDescr!="Vlan1|FastEthernet0"} == 2)
+    for: 30s
+    labels:
+      severity: medium
+    annotations:
+      summary: "Port shutdown on instance {{ $labels.instance }} interface {{ $labels.ifName }}"
+
+  - alert: PacketDrop
+    expr: rate(snmp_ifInDiscards[30s]) > 3 or rate(snmp_ifOutDiscards[30s]) > 3
+    for: 30s
+    labels:
+      severity: medium
+    annotations:
+      summary: "Packet drop on instance {{ $labels.instance }}"
+
+######### PROMETHEUS ALERTS
+  - alert: PrometheusConfigurationReload
+    expr: prometheus_config_last_reload_successful != 1
+    for: 5m
+    labels:
+      severity: error
+    annotations:
+      summary: "Prometheus configuration reload (instance {{ $labels.instance }})"
+      description: "Prometheus configuration reload error\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: AlertmanagerConfigurationReload
+    expr: alertmanager_config_last_reload_successful != 1
+    for: 5m
+    labels:
+      severity: error
+    annotations:
+      summary: "AlertManager configuration reload (instance {{ $labels.instance }})"
+      description: "AlertManager configuration reload error\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+############# Node Exporter
+  - alert: OutOfMemory
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Out of memory (instance {{ $labels.instance }})"
+      description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualNetworkThroughputIn
+    expr: sum by (instance) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual network throughput in (instance {{ $labels.instance }})"
+      description: "Host network interfaces are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualNetworkThroughputOut
+    expr: sum by (instance) (irate(node_network_transmit_bytes_total[2m])) / 1024 / 1024 > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual network throughput out (instance {{ $labels.instance }})"
+      description: "Host network interfaces are probably sending too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualDiskReadRate
+    expr: sum by (instance) (irate(node_disk_read_bytes_total[2m])) / 1024 / 1024 > 50
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual disk read rate (instance {{ $labels.instance }})"
+      description: "Disk is probably reading too much data (> 50 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualDiskWriteRate
+    expr: sum by (instance) (irate(node_disk_written_bytes_total[2m])) / 1024 / 1024 > 50
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual disk write rate (instance {{ $labels.instance }})"
+      description: "Disk is probably writing too much data (> 50 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: OutOfDiskSpace
+    expr: node_filesystem_free_bytes{mountpoint ="/rootfs"} / node_filesystem_size_bytes{mountpoint ="/rootfs"} * 100 < 10
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Out of disk space (instance {{ $labels.instance }})"
+      description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualDiskReadLatency
+    expr: rate(node_disk_read_time_seconds_total[1m]) / rate(node_disk_reads_completed_total[1m]) > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual disk read latency (instance {{ $labels.instance }})"
+      description: "Disk latency is growing (read operations > 100ms)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: UnusualDiskWriteLatency
+    expr: rate(node_disk_write_time_seconds_total[1m]) / rate(node_disk_writes_completed_total[1m]) > 100
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "Unusual disk write latency (instance {{ $labels.instance }})"
+      description: "Disk latency is growing (write operations > 100ms)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HighCpuLoad
+    expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High CPU load (instance {{ $labels.instance }})"
+      description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: SystemdServiceFailed
+    expr: node_systemd_unit_state{state="failed"} == 1
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "SystemD service failed (instance {{ $labels.instance }})"
+      description: "Service {{ $labels.name }} failed\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+########### JUNOS
+  - alert: SwitchIsDown
+    expr: junos_up == 0
+    for: 5m
+    labels:
+      severity: error
+    annotations:
+      summary: "Switch is down (instance {{ $labels.instance }})"
+      description: "The switch appears to be down\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HighBandwithUsage1gib
+    expr: irate(junos_interface_transmit_bytes[1m]) * 8 > 1e+9 * 0.90 * 5
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 5GiB (instance {{ $labels.instance }})"
+      description: "Interface is highly saturated for at least 1 min. (> 0.90GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+########## UPS
+
+  - alert: UPSisDown
+    expr: apcupsd_ups_status{status!~"ONLINE"} == 1
+    labels:
+      severity: error
+    annotations:
+      summary: "UPS {{ $labels.instance }} is not online!"
+      description: UPS is currently in state {{ $labels.status }}
+
+########### UPLINKS
+
+  - alert: UplinkDown
+    expr: snmp_ifOperStatus{instance=~"axs.*", ifAlias=~"UPLINK TO D.*"} == 2
+    for: 3m
+    labels:
+      severity: warning
+    annotations:
+      summary: "UPLINK DOWN ON {{ $labels.instance }}"
+      description: "Interface {{ $labels.ifName }} is down on {{ $labels.instance }}"
+
+  - alert: UplinkDownStack
+    expr: snmp_ifOperStatus{instance=~"axs-\\d{1,2}B.*", ifAlias="INTERCONNECT_STACK"} == 2
+    for: 3m
+    labels:
+      severity: warning
+    annotations:
+      summary: "UPLINK DOWN ON {{ $labels.instance }}"
+      description: "Interface {{ $labels.ifName }} is down on {{ $labels.instance }}"
+
+  - alert: UplinkNotGigabit
+    expr: snmp_ifHighSpeed{instance!~"axs-\\d{1,2}B.*", ifAlias=~"UPLINK TO D.*|INTERCONNECT_STACK"} < 1000 and snmp_ifOperStatus{instance=~"AXS.*", ifAlias="UPLINK TO D.*|INTERCONNECT_STACK"} == 1
+    labels:
+      severity: warning
+    annotations:
+      summary: "UPLINK NOT 1Gbps ON {{ $labels.instance }}"
+      description: "Interface {{ $labels.ifName }} is running at {{ $value }}Mbps on {{ $labels.instance }}"
+
+  - alert: HighBandwithUsage1GbpsDown
+    expr: rate(snmp_ifHCInOctets{instance!~"axs-\\d{1,2}B.*", ifAlias=~"UPLINK TO D.*|INTERCONNECT_STACK", ifType!="53"}[1m]) * 8 > 1000000000 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 1GiB (instance {{ $labels.instance }})"
+      description: "Interface is getting saturated for at least 1 min. (> 0.80GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: HighBandwithUsage1GbpsUp
+    expr: rate(snmp_ifHCOutOctets{instance!~"axs-\\d{1,2}B.*", ifAlias=~"UPLINK TO D.*|INTERCONNECT_STACK", ifType!="53"}[1m]) * 8 > 1000000000 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 1GiB (instance {{ $labels.instance }})"
+      description: "Interface is getting saturated for at least 1 min. (> 0.80GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+  - alert: HighBandwithUsagePortChannelDown
+    expr: rate(snmp_ifHCInOctets{instance!~"axs-\\d{1,2}B.*", ifAlias=~"PORTCHANNEL TO D.*|INTERCONNECT_STACK", ifType="53"}[1m]) * 8 > 4e+9 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 4GiB (instance {{ $labels.instance }})"
+      description: "Port Channel is getting saturated for at least 1 min. (> 3.2GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: HighBandwithUsagePortChannelUp
+    expr: rate(snmp_ifHCOutOctets{instance!~"axs-\\d{1,2}B.*", ifAlias=~"PORTCHANNEL TO D.*|INTERCONNECT_STACK", ifType="53"}[1m]) * 8 > 4e+9 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 4GiB (instance {{ $labels.instance }})"
+      description: "Port Channel is getting saturated for at least 1 min. (> 3.2GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+######### CORE 
+  - alert: HighBandwithUsageCoreDown
+    expr: rate(snmp_ifHCInOctets{instance=~"core[1,2].*", ifAlias="Bell Primary"}[1m]) * 8 > 10e+9 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 10GiB (instance {{ $labels.instance }})"
+      description: "Core is getting saturated for at least 1 min. (> 8GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+  - alert: HighBandwithUsageCorelUp
+    expr: rate(snmp_ifHCOutOctets{instance=~"core[1,2].*", ifAlias="Bell Primary"}[1m]) * 8 > 10e+9 * 0.8
+    for: 1m
+    labels:
+      severity: warning
+    annotations:
+      summary: "High Bandwith Usage 10GiB (instance {{ $labels.instance }})"
+      description: "Core is getting saturated for at least 1 min. (> 8GiB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+
+######### DHCP
+
+  - alert: DhcpPool
+    expr: usage_per_scope{instance="dhcp1.event.lanets.ca:8080"}/size_per_scope{instance="dhcp1.event.lanets.ca:8080"} * 100 > 80
+    for: 5s
+    labels:
+      severity: warning
+    annotations:
+      summary: "DHCP Pool almost full!"
+      description: 'The DHCP pool `{{ $labels.scope }}` is more than 80% used ({{ $value | printf "%.2f"}} %)! Beware!'
+
+  - alert: DhcpPoolFull
+    expr: usage_per_scope{instance="dhcp1.event.lanets.ca:8080"}/size_per_scope{instance="dhcp1.event.lanets.ca:8080"} * 100 > 95
+    for: 5s
+    labels:
+      severity: high
+    annotations:
+      summary: "DHCP Pool is full!"
+      description: 'The DHCP pool `{{ $labels.scope }}` is full ({{ $value | printf "%.2f"}} %)! Take Action!'

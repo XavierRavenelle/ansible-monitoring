@@ -1,0 +1,19 @@
+---
+- name: Generate docker-compose
+  template:
+    src: "docker-compose.yml.j2"
+    dest: "{{ PATH }}/docker-compose.yml"
+    mode: '0744'
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+    force: true
+  become: true
+
+- name: Start docker-compose
+  docker_compose:
+    project_src: "{{ PATH }}"
+    files:
+      - docker-compose.yml
+    state: present
+    recreate: always
+  become: true

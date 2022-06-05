@@ -1,0 +1,140 @@
+{{ ansible_managed | comment }}
+
+---
+global:
+  scrape_interval: 30s
+  evaluation_interval: 10s
+
+rule_files:
+  - "{{ prometheus_config_dir }}/rules/rules.yml"
+
+scrape_configs:
+  - job_name: 'prometheus'
+    # Override global interval
+    scrape_interval: 30s
+    static_configs:
+      - targets:
+          - localhost:9090
+
+  - job_name: 'node'
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        {% for host in groups['hosts'] -%}
+        - {{ hostvars[host].inventory_hostname }}:{{ node_exporter_port }}
+        {% endfor %}
+
+    relabel_configs:
+      - source_labels: ['__address__']
+        regex: '(.*):({{ node_exporter_port }})'
+        target_label: 'instance'
+        replacement: '$1'
+
+  - job_name: 'cadvisor'
+    scrape_interval: 10s
+    static_configs:
+      - targets:
+        {% for host in groups['docker'] -%}
+        - {{ hostvars[host].inventory_hostname }}:8080
+        {% endfor %}
+
+    relabel_configs:
+      - source_labels: ['__address__']
+        regex: '(.*):({{ node_exporter_port }})'
+        target_label: 'instance'
+        replacement: '$1'
+
+  - job_name: 'dhcp'
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+        {% for host in groups['dhcp'] -%}
+        - {{ hostvars[host].inventory_hostname }}:{{ dhcp_exporter_port }}
+        - {{ hostvars[host].inventory_hostname }}:{{ dhcp_pool_exporter }}
+        {% endfor %}
+
+  - job_name: 'snmp_cisco'
+    metrics_path: /snmp
+    params:
+      module: [Cisco]
+    static_configs:
+      - targets:
+        {% for host in groups['switch'] -%}
+        - {{ hostvars[host].inventory_hostname }}
+        {% endfor %}
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ groups['exporters'] | first }}:{{ snmp_exporter_port }}
+
+  - job_name: 'blackbox-ping'
+    scrape_interval: 2s
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    static_configs:
+      - targets:
+        {% for host in groups['switch'] -%}
+        - {{ hostvars[host].inventory_hostname }}
+        {% endfor %}
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ groups['exporters'] | first }}:{{ blackbox_exporter_port }}
+
+  - job_name: 'blackbox-ssh'
+    scrape_interval: 5m
+    metrics_path: /probe
+    params:
+      module: [ssh_banner]
+    static_configs:
+      - targets:
+        {% for host in groups['switch'] -%}
+        - {{ hostvars[host].inventory_hostname }}:22
+        {% endfor %}
+
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: instance
+      - target_label: __address__
+        replacement: {{ groups['exporters'] | first }}:{{ blackbox_exporter_port }}
+
+  - job_name: 'ping-exporter'
+    scrape_interval: 60s
+    metrics_path: /probe
+    params:
+         prot: ['4']
+    static_configs:
+      - targets:
+        - google.ca
+        - 1.1.1.1
+        - 8.8.8.8
+        - dcroot1.lanets.ca
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+        replacement: ${1}
+      - source_labels: [__param_target]
+        regex: (.*)
+        target_label: instance
+        replacement: ${1}
+      - source_labels: []
+        regex: .*
+        target_label: __address__
+        replacement: {{ groups['exporters'] | first }}:{{ ping_exporter_port }}
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - {{ groups['prometheus'] | first }}:{{ alertmanager_port }}

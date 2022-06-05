@@ -1,6 +1,19 @@
 ---
-- name: Include tasks
-  tasks:
-    - include: "setup.yml"
-    - include: "grafana.yml"
-    - include: "loki.yml"
+
+- name: Setup role
+  include_tasks: "setup.yml"
+
+- name: Configure prometheus
+  include_tasks: prometheus.yml
+
+- name: Configure loki
+  include_tasks: loki.yml
+
+- name: Configure grafana
+  include_tasks: grafana.yml
+
+- name: Start exporter
+  include_tasks: exporter/main.yml
+
+- name: Start app
+  include_tasks: "start.yml"

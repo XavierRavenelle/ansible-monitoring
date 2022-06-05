@@ -20,7 +20,7 @@ services:
     volumes: 
       - {{ PATH }}/grafana/:/etc/grafana/
     ports:
-      - {{ GRAFANA_PORT }}:80
+      - {{ grafana_port }}:{{ grafana_port }}
     networks:
       - monitoring
     restart: unless-stopped
@@ -31,7 +31,7 @@ services:
       image: lscr.io/linuxserver/syslog-ng
       environment:
         - PUID={{ USER.UID }}
-        - PGID={{ USER.GUID }}
+        - PGID={{ USER.UID }}
         - TZ=America/Toronto
       volumes:
         - {{ PATH }}/loki/syslog-ng.conf:/config/syslog-ng.conf

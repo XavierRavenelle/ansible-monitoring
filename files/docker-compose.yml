@@ -38,7 +38,7 @@ services:
       - 9080:9080
       - 1514:1514
     volumes:
-      - /opt/loki/promtail.conf:/etc/promtail/promtail.conf
+      - /opt/monitoring/loki/promtail.conf:/etc/promtail/promtail.conf
     command: -config.file=/etc/promtail/promtail.conf
     networks:
       - loki

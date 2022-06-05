@@ -1,7 +1,16 @@
 ---
 - name: Create prometheus folder
   file:
-    path: "{{ PATH }}/grafana"
+    path: "{{ PATH }}/prometheus"
+    mode: '0755'
+    state: directory
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+
+- name: Create rule folder
+  file:
+    path: "{{ PATH }}/prometheus/rules"
     mode: '0755'
     state: directory
     owner: "{{ USER.USERNAME }}"
@@ -10,12 +19,18 @@
 
 - name: Generate conf
   template:
-    src: prometheus/{{ ITEM }}.j2
-    dest: "{{ PATH }}/prometheus/{{ ITEM }}"
-    owner: {{ USER.USERNAME }}
-    group: {{ USER.USERNAME }}
+    src: prometheus/prometheus.yml.j2
+    dest: "{{ PATH }}/prometheus/prometheus.yml"
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
     mode: '0744'
   become: true
-  with_items: 
-    - alert.rules
-    - prometheus.yml
+
+- name: Copy alert
+  copy:
+    src: alert.rules.yml
+    dest: "{{ PATH }}/prometheus/rules/rules.yml"
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+    mode: '0744'
+  become: true

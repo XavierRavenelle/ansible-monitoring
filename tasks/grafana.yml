@@ -19,28 +19,26 @@
 
 - name: Generate config
   template:
-    src: "{{ item }}.j2"
-    dest: "{{ PATH }}/grafana/{{ item }}"
+    src: grafana/grafana.ini.j2
+    dest: "{{ PATH }}/grafana/grafana.ini"
     mode: '0744'
     owner: "{{ USER.USERNAME }}"
     group: "{{ USER.USERNAME }}"
-  with_items:
-    - grafana.ini
   become: true
 
 - name: Generate LDAP
   template:
-    src: "ldap.toml.j2"
+    src: grafana/ldap.toml.j2
     dest: "{{ PATH }}/grafana/ldap.toml"
     mode: '0744'
     owner: "{{ USER.USERNAME }}"
     group: "{{ USER.USERNAME }}"
   become: true
-  when: LDAP.ENABLE == true
+  when: grafana_ldap.enable == true
 
 - name: Generate datasource
   template:
-    src: datasources.yml.j2
+    src: grafana/datasources.yml.j2
     dest: "{{ PATH }}/grafana/provisioning/datasources/ansible.yml"
     mode: '0744'
     owner: "{{ USER.USERNAME }}"

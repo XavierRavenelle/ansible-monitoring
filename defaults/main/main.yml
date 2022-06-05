@@ -1,0 +1,8 @@
+---
+PATH: "/opt/monitoring"
+
+USER:
+  USERNAME: "monitoring-user"
+  SHELL: "/bin/nologin"
+  CREATE_HOME: no
+  UID: 1234
