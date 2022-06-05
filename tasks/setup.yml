@@ -22,6 +22,4 @@
     name:
       - python3-pip
       - docker-compose
-      - docker
-      - docker.io
     state: present
