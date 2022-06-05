@@ -1,0 +1,19 @@
+---
+## GRAFANA
+grafana_port: 80
+grafana_cap_net_bind_service: true
+grafana_use_provisioning: yes
+
+admin_user: admin
+admin_password: ""
+
+grafana_url: http://grafana
+grafana_plugins: ""
+
+grafana_ldap:
+  enable: false
+
+grafana_auth:
+  ldap:
+   config_file: "/etc/grafana/ldap.toml"
+   allow_sign_up: yes
