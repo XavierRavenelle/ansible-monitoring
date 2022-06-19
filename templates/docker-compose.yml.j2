@@ -76,3 +76,18 @@ services:
     networks:
       - monitoring
     restart: unless-stopped
+
+  uglymap:
+    image: ugly-map/node
+    build: {{ PATH }}/uglymap
+    ports:
+      - 3000:3000
+    networks:
+      - monitoring
+    volumes:
+      - {{ PATH }}/app/config:/usr/src/app/config
+      - {{ PATH }}/app/public:/usr/src/app/public
+      - {{ PATH }}/app/server.js:/usr/src/app/server.js
+      - {{ PATH }}/data:/usr/src/app/data
+    command: npm run start
+    restart: unless-stopped

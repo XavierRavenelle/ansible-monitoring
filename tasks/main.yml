@@ -1,5 +1,4 @@
 ---
-
 - name: Setup role
   include_tasks: "setup.yml"
 
@@ -11,6 +10,9 @@
 
 - name: Configure grafana
   include_tasks: grafana.yml
+
+- name: Configure uglymap
+  include_tasks: uglymap.yml
 
 - name: Start app
   include_tasks: "start.yml"

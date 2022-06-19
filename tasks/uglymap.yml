@@ -1,0 +1,14 @@
+---
+- name: Create folder
+  file:
+    path: "{{ PATH }}/uglymap"
+    mode: '0755'
+    state: directory
+    owner: "{{ USER.USERNAME }}"
+    group: "{{ USER.USERNAME }}"
+  become: true
+
+- name: Read-write git checkout from github
+  ansible.builtin.git:
+    repo: https://github.com/lanets/ugly-map
+    dest: "{{ PATH }}"
